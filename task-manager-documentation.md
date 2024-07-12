@@ -27,32 +27,29 @@ task-manager/
 ### File: backend/app.py
 
 ```python
-# Import necessary libraries
+# app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+import os
 
-# Initialize Flask app
 app = Flask(__name__)
-# Enable CORS for all routes
-CORS(app)
-# Configure SQLite database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
+CORS(app, resources={r"/*": {"origins": "https://task-manager87.netlify.app"}})
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/psanchez87/task-manager/intance/tasks.db'
+
+
 db = SQLAlchemy(app)
 
-# Define Task model
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     completed = db.Column(db.Boolean, default=False)
 
-# Route to get all tasks
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     tasks = Task.query.all()
     return jsonify([{'id': task.id, 'title': task.title, 'completed': task.completed} for task in tasks])
 
-# Route to add a new task
 @app.route('/tasks', methods=['POST'])
 def add_task():
     data = request.json
@@ -61,7 +58,6 @@ def add_task():
     db.session.commit()
     return jsonify({'id': new_task.id, 'title': new_task.title, 'completed': new_task.completed}), 201
 
-# Route to update a task
 @app.route('/tasks/<int:task_id>', methods=['PUT'])
 def update_task(task_id):
     task = Task.query.get_or_404(task_id)
@@ -71,7 +67,6 @@ def update_task(task_id):
     db.session.commit()
     return jsonify({'id': task.id, 'title': task.title, 'completed': task.completed})
 
-# Route to delete a task
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     task = Task.query.get_or_404(task_id)
@@ -79,12 +74,10 @@ def delete_task(task_id):
     db.session.commit()
     return '', 204
 
-# Run the app
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-```
 
 ### Dependencies
 - Flask==2.3.2
@@ -95,50 +88,43 @@ if __name__ == '__main__':
 
 ### File: frontend/src/App.js
 
-```javascript
+// App.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function App() {
-  // State for tasks and new task input
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
 
-  // Fetch tasks on component mount
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // Function to fetch all tasks
   const fetchTasks = async () => {
-    const response = await axios.get('http://localhost:5000/tasks');
+    const response = await axios.get('https://psanchez87.pythonanywhere.com/tasks');
     setTasks(response.data);
   };
 
-  // Function to add a new task
   const addTask = async (e) => {
     e.preventDefault();
-    await axios.post('http://localhost:5000/tasks', { title: newTask });
+    await axios.post('https://psanchez87.pythonanywhere.com/tasks', { title: newTask });
     setNewTask('');
     fetchTasks();
   };
 
-  // Function to toggle task completion status
   const toggleTask = async (id, completed) => {
-    await axios.put(`http://localhost:5000/tasks/${id}`, { completed: !completed });
+    await axios.put(`https://psanchez87.pythonanywhere.com/tasks/${id}`, { completed: !completed });
     fetchTasks();
   };
 
-  // Function to delete a task
   const deleteTask = async (id) => {
-    await axios.delete(`http://localhost:5000/tasks/${id}`);
+    await axios.delete(`https://psanchez87.pythonanywhere.com/tasks/${id}`);
     fetchTasks();
   };
 
   return (
     <div className="App">
       <h1>Task Manager</h1>
-      {/* Form to add new tasks */}
       <form onSubmit={addTask}>
         <input
           type="text"
@@ -148,7 +134,6 @@ function App() {
         />
         <button type="submit">Add Task</button>
       </form>
-      {/* List of tasks */}
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>
@@ -169,7 +154,6 @@ function App() {
 }
 
 export default App;
-```
 
 ### Dependencies
 - react: 18.2.0
